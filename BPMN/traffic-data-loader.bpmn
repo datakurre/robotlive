@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_1wnk5yy" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.0.0-alpha.0" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.16.0">
+  <bpmn:process id="traffic-data-loader" name="Traffic Data Loader" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Start">
+      <bpmn:outgoing>Flow_0x0l7tu</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0x0l7tu" sourceRef="StartEvent_1" targetRef="robot_0tajedx" />
+    <bpmn:serviceTask id="robot_0tajedx" name="Producer" camunda:type="external" camunda:topic="Produce traffic data work items">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="workItems">${traffic_data}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0x0l7tu</bpmn:incoming>
+      <bpmn:outgoing>Flow_1yjrpdc</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:subProcess id="Activity_1ga87vk" name="Work item consumer">
+      <bpmn:incoming>Flow_1yjrpdc</bpmn:incoming>
+      <bpmn:outgoing>Flow_1lv0u68</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="true" camunda:collection="${workItems.elements()}" camunda:elementVariable="item" />
+      <bpmn:endEvent id="Event_1ef0wom" name="End">
+        <bpmn:incoming>Flow_0vewpkt</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:boundaryEvent id="Event_0k24uld" name="Service&#10;failure" attachedToRef="robot_1s7fw7r">
+        <bpmn:outgoing>Flow_0ktuz5v</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorEventDefinition_1ed766m" errorRef="Error_0owwseo" />
+      </bpmn:boundaryEvent>
+      <bpmn:sequenceFlow id="Flow_0vewpkt" sourceRef="robot_1s7fw7r" targetRef="Event_1ef0wom" />
+      <bpmn:sequenceFlow id="Flow_0ktuz5v" sourceRef="Event_0k24uld" targetRef="Gateway_0q8ee21" />
+      <bpmn:startEvent id="Event_0dfswap" name="Item">
+        <bpmn:outgoing>Flow_060xad7</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="Flow_060xad7" sourceRef="Event_0dfswap" targetRef="Gateway_0q8ee21" />
+      <bpmn:exclusiveGateway id="Gateway_0q8ee21">
+        <bpmn:incoming>Flow_060xad7</bpmn:incoming>
+        <bpmn:incoming>Flow_0ktuz5v</bpmn:incoming>
+        <bpmn:outgoing>Flow_1qmwz54</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:sequenceFlow id="Flow_1qmwz54" sourceRef="Gateway_0q8ee21" targetRef="robot_1s7fw7r" />
+      <bpmn:serviceTask id="robot_1s7fw7r" name="Consumer" camunda:type="external" camunda:topic="Consume traffic data work item">
+        <bpmn:extensionElements>
+          <camunda:errorEventDefinition id="ErrorEventDefinition_1dckr2z" errorRef="Error_0owwseo" expression="${status == &#34;API_ERROR&#34;}" />
+          <camunda:inputOutput>
+            <camunda:inputParameter name="traffic_data">${item}</camunda:inputParameter>
+          </camunda:inputOutput>
+          <camunda:errorEventDefinition id="ErrorEventDefinition_1gkp1w6" errorRef="Error_101rqum" expression="${status == &#34;INVALID_DATA&#34;}" />
+        </bpmn:extensionElements>
+        <bpmn:incoming>Flow_1qmwz54</bpmn:incoming>
+        <bpmn:outgoing>Flow_0vewpkt</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="Event_1mu6htk" name="Invalid data">
+        <bpmn:incoming>Flow_0gh1f39</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_0gh1f39" name="Validation&#10;failure" sourceRef="Event_11rgbj8" targetRef="Event_1mu6htk" />
+      <bpmn:boundaryEvent id="Event_11rgbj8" attachedToRef="robot_1s7fw7r">
+        <bpmn:outgoing>Flow_0gh1f39</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorEventDefinition_1opvyll" errorRef="Error_101rqum" />
+      </bpmn:boundaryEvent>
+    </bpmn:subProcess>
+    <bpmn:sequenceFlow id="Flow_1yjrpdc" sourceRef="robot_0tajedx" targetRef="Activity_1ga87vk" />
+    <bpmn:endEvent id="Event_00ymt3d" name="End">
+      <bpmn:incoming>Flow_1lv0u68</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1lv0u68" sourceRef="Activity_1ga87vk" targetRef="Event_00ymt3d" />
+  </bpmn:process>
+  <bpmn:error id="Error_0owwseo" name="Error_1pcdidp" errorCode="error" camunda:errorMessage="Unexpected error" />
+  <bpmn:error id="Error_101rqum" name="Error_1tigoqv" errorCode="invalid_data" camunda:errorMessage="Invalid data" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="traffic-data-loader">
+      <bpmndi:BPMNEdge id="Flow_1lv0u68_di" bpmnElement="Flow_1lv0u68">
+        <di:waypoint x="870" y="187" />
+        <di:waypoint x="922" y="187" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1yjrpdc_di" bpmnElement="Flow_1yjrpdc">
+        <di:waypoint x="370" y="187" />
+        <di:waypoint x="430" y="187" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0x0l7tu_di" bpmnElement="Flow_0x0l7tu">
+        <di:waypoint x="215" y="187" />
+        <di:waypoint x="270" y="187" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1" bioc:stroke="#000" bioc:fill="#fff">
+        <dc:Bounds x="179" y="169" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="185" y="212" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0ds8mcp_di" bpmnElement="robot_0tajedx">
+        <dc:Bounds x="270" y="147" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_08uda0d_di" bpmnElement="Activity_1ga87vk" isExpanded="true">
+        <dc:Bounds x="430" y="100" width="440" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0gh1f39_di" bpmnElement="Flow_0gh1f39">
+        <di:waypoint x="720" y="248" />
+        <di:waypoint x="720" y="280" />
+        <di:waypoint x="802" y="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="736" y="243" width="48" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1qmwz54_di" bpmnElement="Flow_1qmwz54">
+        <di:waypoint x="605" y="190" />
+        <di:waypoint x="650" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_060xad7_di" bpmnElement="Flow_060xad7">
+        <di:waypoint x="498" y="190" />
+        <di:waypoint x="555" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ktuz5v_di" bpmnElement="Flow_0ktuz5v">
+        <di:waypoint x="680" y="248" />
+        <di:waypoint x="680" y="280" />
+        <di:waypoint x="580" y="280" />
+        <di:waypoint x="580" y="215" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vewpkt_di" bpmnElement="Flow_0vewpkt">
+        <di:waypoint x="750" y="190" />
+        <di:waypoint x="802" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Event_1ef0wom_di" bpmnElement="Event_1ef0wom" bioc:stroke="#000" bioc:fill="#fff">
+        <dc:Bounds x="802" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="810" y="215" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0dfswap_di" bpmnElement="Event_0dfswap" bioc:stroke="#000" bioc:fill="#fff">
+        <dc:Bounds x="462" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="469" y="215" width="22" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0q8ee21_di" bpmnElement="Gateway_0q8ee21" isMarkerVisible="true">
+        <dc:Bounds x="555" y="165" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0xfoo0o_di" bpmnElement="robot_1s7fw7r">
+        <dc:Bounds x="650" y="150" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1mu6htk_di" bpmnElement="Event_1mu6htk">
+        <dc:Bounds x="802" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="791" y="305" width="58" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0vikiew_di" bpmnElement="Event_11rgbj8">
+        <dc:Bounds x="702" y="212" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_17xq6m7_di" bpmnElement="Event_0k24uld" bioc:stroke="#000" bioc:fill="#fff">
+        <dc:Bounds x="662" y="212" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="622" y="243" width="37" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_00ymt3d_di" bpmnElement="Event_00ymt3d" bioc:stroke="#000" bioc:fill="#fff">
+        <dc:Bounds x="922" y="169" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="930" y="212" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
