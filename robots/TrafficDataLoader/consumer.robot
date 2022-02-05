@@ -10,6 +10,7 @@ Consume traffic data work items
 *** Keywords ***
 Process traffic data
     ${payload}=    Get Work Item Payload
+    Create Output Work Item
     ${traffic_data}=    Set Variable    ${payload}[${WORK_ITEM_NAME}]
     ${valid}=    Validate traffic data    ${traffic_data}
     IF    ${valid}
@@ -17,6 +18,7 @@ Process traffic data
     ELSE
         Handle invalid traffic data    ${traffic_data}
     END
+    Save Work Item
 
 Validate traffic data
     [Arguments]    ${traffic_data}
@@ -26,40 +28,27 @@ Validate traffic data
 
 Post traffic data to sales system
     [Arguments]    ${traffic_data}
-    ${status}    ${return}    Run Keyword And Ignore Error
-    ...    POST
-    ...    https://robocorp.com/inhuman-insurance-inc/sales-system-api
-    ...    json=${traffic_data}
-    Handle traffic API response    ${status}    ${return}    ${traffic_data}
-
-Handle traffic API response
-    [Arguments]    ${status}    ${return}    ${traffic_data}
-    IF    "${status}" == "PASS"
+    TRY
+        POST
+        ...    https://robocorp.com/inhuman-insurance-inc/sales-system-api
+        ...    json=${traffic_data}
         Handle traffic API OK response
-    ELSE
+    EXCEPT    AS    ${return}
         Handle traffic API error response    ${return}    ${traffic_data}
     END
 
 Handle traffic API OK response
-    Release Input Work Item    DONE
+    Set Work Item Variable    status    DONE
 
 Handle traffic API error response
     [Arguments]    ${return}    ${traffic_data}
     Log
     ...    Traffic data posting failed: ${traffic_data} ${return}
     ...    ERROR
-    Release Input Work Item
-    ...    state=FAILED
-    ...    exception_type=APPLICATION
-    ...    code=TRAFFIC_DATA_POST_FAILED
-    ...    message=${return}
+    Set Work Item Variable    status    API_ERROR
 
 Handle invalid traffic data
     [Arguments]    ${traffic_data}
     ${message}=    Set Variable    Invalid traffic data: ${traffic_data}
     Log    ${message}    WARN
-    Release Input Work Item
-    ...    state=FAILED
-    ...    exception_type=BUSINESS
-    ...    code=INVALID_TRAFFIC_DATA
-    ...    message=${message}
+    Set Work Item Variable    status    INVALID_DATA

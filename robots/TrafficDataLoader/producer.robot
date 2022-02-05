@@ -70,9 +70,7 @@ Create work item payloads
 
 Save work item payloads
     [Arguments]    ${payloads}
-    FOR    ${payload}    IN    @{payloads}
-        Save work item payload    ${payload}
-    END
+    Save work item payload    ${payloads}
 
 Save work item payload
     [Arguments]    ${payload}
