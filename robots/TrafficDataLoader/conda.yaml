@@ -13,4 +13,4 @@ dependencies:
       # Define pip packages here.
       # https://pypi.org/
       - rpaframework==12.5.1 # https://rpaframework.org/releasenotes.html
-      - robotframework==5.0a1
+      - robotframework==5.0b1
